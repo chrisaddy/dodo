@@ -13,7 +13,9 @@ proc create*(databasePath: string) =
     project     TEXT,
     context     TEXT,
     priority    INTEGER,
-    timestamp   REAL,
+    created     REAL,
+    started     REAL,
+    finished    REAL,
     status      TEXT)"""))
   database.close()
 
@@ -21,14 +23,14 @@ proc create*(databasePath: string) =
 proc save*(todo: Todo, databasePath: string): int64 =
   let database = open(databasePath, "", "", "")
   let id = database.insertId(
-    sql"""INSERT INTO tasks (text, project, context, priority, timestamp, status)
+    sql"""INSERT INTO tasks (text, project, context, priority, created, status)
           VALUES (?, ?, ?, ?, ?, ?)""",
     todo.text,
     todo.project,
     todo.context,
     todo.priority,
     todo.timestamp,
-    "open"
+    "do"
   )
 
   return id
@@ -39,9 +41,9 @@ proc showAll*(databasePath: string): string =
   for row in database.rows(sql"SELECT * FROM tasks;"):
     echo row
 
-proc showOpen*(databasePath: string): string =
+proc showDo*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
-  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'open';"):
+  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'do';"):
     echo row
 
 proc showDoing*(databasePath: string): string =
@@ -55,6 +57,31 @@ proc showDone*(databasePath: string): string =
     echo row
 
 
-proc moveTask*(databasePath: string, id: string, destination: string) =
+proc showTaskText*(databasePath: string, id: int): string =
+  let database = open(databasePath, "", "", "")
+  for row in database.rows(sql"SELECT text FROM tasks WHERE id = ?;", id):
+    echo row
+
+proc showProjects*(databasePath: string): string =
+  let database = open(databasePath, "", "", "")
+  for row in database.rows(sql"SELECT project, COUNT(project) as unfinished FROM tasks WHERE status != 'done' GROUP BY project;;"):
+    echo row
+
+
+proc editTaskText*(databasePath: string, id: int, newText: string): string =
+  let database = open(databasePath, "", "", "")
+  for row in database.rows(sql"UPDATE tasks SET text = ? WHERE id = ?;", newText, id):
+    discard row
+
+
+proc moveTask*(databasePath: string, id: string, destination: string, timestamp: float) =
   let database = open(databasePath, "", "", "")
   discard database.getRow(sql"UPDATE tasks SET status = ? WHERE id = ?", destination, id)
+  discard database.getRow(sql"UPDATE tasks SET status = ? WHERE id = ?", destination, id)
+
+  case destination:
+    of "doing":
+      discard database.getRow(sql"UPDATE tasks SET started = ? WHERE id = ?", timestamp, id)
+    of "done":
+      discard database.getRow(sql"UPDATE tasks SET finished = ? WHERE id = ?", timestamp, id)
+    else: discard

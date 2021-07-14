@@ -139,7 +139,7 @@ test "retrieving open tasks":
   saved = save(parsed, databasePath=db)
   check: saved == 3
 
-  let open = showOpen(db)
+  let open = showDo(db)
   check: open == 3
 
   teardown()
