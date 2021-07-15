@@ -2,7 +2,7 @@ build:
 	nim compile --threads:on src/dodo
 
 release:
-	nimble c --threads:on -d:release src/dodo.nim
+	nimble c --verbose --showAllMismatches:on --threads:on -d:release src/dodo.nim
 	mv src/dodo .
 
 run:

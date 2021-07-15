@@ -17,17 +17,18 @@ proc parseDodo*(text: seq[string]): Todo =
     if token.startsWith('@'):
       project = token
 
-    if token.startsWith('#'):
+    if token.startsWith('/'):
       context.add(token)
 
-    if token == "|":
+    if token == "+":
       priority = 1
-    if token == "||":
+    if token == "++":
       priority = 2
-    if token == "|||":
+    if token == "+++":
       priority = 3
-    if token == "||||":
+    if token == "++++":
       priority = 4
+
 
   return Todo(
     text : text.join(" "),

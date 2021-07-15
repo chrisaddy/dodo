@@ -10,8 +10,6 @@ import os
 import dodoparse
 import typetraits
 import dodostore
-import flatdb
-
 
 
 proc setup(): string =
@@ -59,41 +57,41 @@ test "test setting priorities":
 
   check: parsed.priority == 0
 
-  text = @["this", "is", "slightly", "important", "|"]
+  text = @["this", "is", "slightly", "important", "+"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 1
 
-  text = @["this", "is", "also", "|", "slightly", "important"]
+  text = @["this", "is", "also", "+", "slightly", "important"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 1
 
-  text = @["this", "is", "slightly", "more", "important", "||"]
+  text = @["this", "is", "slightly", "more", "important", "++"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 2
 
-  text = @["this", "is", "pretty", "important", "|||"]
+  text = @["this", "is", "pretty", "important", "+++"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 3
 
-  text = @["this", "is", "verrrry", "important", "||||"]
+  text = @["this", "is", "verrrry", "important", "++++"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 4
 
 
 test "test adding project":
-  var text = @["this", "is", "a", "verrrry", "important", "@work", "thing", "||||"]
+  var text = @["this", "is", "a", "verrrry", "important", "@work", "thing", "++++"]
   var parsed = parseDodo(text)
 
   check: parsed.priority == 4
   check: parsed.project == "@work"
 
 
-  text = @["this", "is", "a", "verrrry", "important", "@@work", "thing", "||||"]
+  text = @["this", "is", "a", "verrrry", "important", "@@work", "thing", "++++"]
   parsed = parseDodo(text)
 
   check: parsed.priority == 4
@@ -101,22 +99,22 @@ test "test adding project":
 
 
 test "test adding context":
-  var text = @["this", "needs", "#derek", "approval"]
+  var text = @["this", "needs", "/derek", "approval"]
   var parsed = parseDodo(text)
 
-  check: parsed.context == "#derek"
+  check: parsed.context == "/derek"
 
 test "test adding context, project, and priority":
-  var text = @["this", "is", "#work", "@project", "that", "needs", "#derek", "approval", "|||"]
+  var text = @["this", "is", "/work", "@project", "that", "needs", "/derek", "approval", "+++"]
   var parsed = parseDodo(text)
 
-  check: parsed.context == "#work,#derek"
+  check: parsed.context == "/work,/derek"
   check: parsed.project == "@project"
   check: parsed.priority == 3
 
 test "test storing new task":
   let db = setup()
-  var text = @["this", "is", "#work", "@project", "that", "needs", "#derek", "approval", "|||"]
+  var text = @["this", "is", "/work", "@project", "that", "needs", "/derek", "approval", "+++"]
   var parsed = parseDodo(text)
 
   let saved = save(parsed, databasePath=db)
@@ -127,7 +125,7 @@ test "test storing new task":
 
 test "retrieving open tasks":
   let db = setup()
-  var text = @["this", "is", "#work", "@project", "that", "needs", "#derek", "approval", "|||"]
+  var text = @["this", "is", "/work", "@project", "that", "needs", "/derek", "approval", "+++"]
   var parsed = parseDodo(text)
 
   var saved = save(parsed, databasePath=db)
@@ -138,9 +136,6 @@ test "retrieving open tasks":
 
   saved = save(parsed, databasePath=db)
   check: saved == 3
-
-  let open = showDo(db)
-  check: open == 3
 
   teardown()
 

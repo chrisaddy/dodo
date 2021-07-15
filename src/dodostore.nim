@@ -1,8 +1,16 @@
 import dodoparse
 import db_sqlite
+import terminal
 
+proc print(text: string, color: ForegroundColor): string =
+  setForegroundColor(color)
+  stdout.write(text)
+  resetAttributes()
 
-# Create table
+proc print(text: Row, color: ForegroundColor): string =
+  setForegroundColor(color)
+  stdout.write(text)
+  resetAttributes()
 
 proc create*(databasePath: string) =
   let database = open(databasePath, "", "", "")
@@ -19,7 +27,6 @@ proc create*(databasePath: string) =
     status      TEXT)"""))
   database.close()
 
-
 proc save*(todo: Todo, databasePath: string): int64 =
   let database = open(databasePath, "", "", "")
   let id = database.insertId(
@@ -35,27 +42,57 @@ proc save*(todo: Todo, databasePath: string): int64 =
 
   return id
 
+proc deleteTask*(databasePath: string, id: int): string =
+  let database = open(databasePath, "", "", "")
+  discard database.getRow(sql"DELETE FROM tasks WHERE id = ?", id)
+
 
 proc showAll*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks;"):
-    echo row
+    echo row[0], " ", row[2], " ", row[3]
+    if row[4] == "4":
+      discard print(row[1], fgRed)
+    if row[4] == "3":
+      discard print(row[1], fgYellow)
+    if row[4] in @["0", "1", "2"]:
+      discard print(row[1], fgGreen)
+    echo "\n"
 
 proc showDo*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'do';"):
-    echo row
+    echo row[0], " ", row[2], " ", row[3]
+    if row[4] == "4":
+      discard print(row[1], fgRed)
+    if row[4] == "3":
+      discard print(row[1], fgYellow)
+    if row[4] in @["0", "1", "2"]:
+      discard print(row[1], fgGreen)
+    echo "\n"
+
+
+
 
 proc showDoing*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'doing';"):
-    echo row
+    echo row[0], " ", row[2], " ", row[3]
+    if row[4] == "4":
+      discard print(row[1], fgRed)
+    if row[4] == "3":
+      discard print(row[1], fgYellow)
+    if row[4] in @["0", "1", "2"]:
+      discard print(row[1], fgGreen)
+    echo "\n"
+
 
 proc showDone*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'done';"):
-    echo row
-
+    echo row[0], " ", row[2], " ", row[3]
+    discard print(row[1], fgCyan)
+    echo "\n"
 
 proc showTaskText*(databasePath: string, id: int): string =
   let database = open(databasePath, "", "", "")
