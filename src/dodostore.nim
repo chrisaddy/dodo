@@ -1,5 +1,6 @@
 import dodoparse
 import db_sqlite
+import terminaltables
 
 
 # Create table
@@ -56,18 +57,34 @@ proc showAll*(databasePath: string): string =
 
 proc showDo*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
-  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'do';"):
-    echo row
+  let tbl = newUnicodeTable()
+  tbl.separateRows = true
+  tbl.setHeaders(@["id", "project", "text", "context"])
+  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'do' ORDER BY priority, created DESC;"):
+    tbl.addRow(@[row[0], row[2], row[1], row[3]])
+
+  printTable(tbl)
 
 proc showDoing*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
-  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'doing';"):
-    echo row
+  let tbl = newUnicodeTable()
+  tbl.separateRows = true
+  tbl.setHeaders(@["id", "project", "text", "context"])
+  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'doing' ORDER BY priority, started DESC;"):
+    tbl.addRow(@[row[0], row[2], row[1], row[3]])
+
+  printTable(tbl)
+
 
 proc showDone*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
-  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'done';"):
-    echo row
+  let tbl = newUnicodeTable()
+  tbl.separateRows = true
+  tbl.setHeaders(@["id", "project", "text", "context"])
+  for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'done' ORDER BY finished;"):
+    tbl.addRow(@[row[0], row[2], row[1], row[3]])
+
+  printTable(tbl)
 
 
 proc showTaskText*(databasePath: string, id: int): string =
