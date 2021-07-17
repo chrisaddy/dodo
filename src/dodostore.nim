@@ -1,16 +1,8 @@
 import dodoparse
 import db_sqlite
-import terminal
 
-proc print(text: string, color: ForegroundColor): string =
-  setForegroundColor(color)
-  stdout.write(text)
-  resetAttributes()
 
-proc print(text: Row, color: ForegroundColor): string =
-  setForegroundColor(color)
-  stdout.write(text)
-  resetAttributes()
+# Create table
 
 proc create*(databasePath: string) =
   let database = open(databasePath, "", "", "")
@@ -24,75 +16,59 @@ proc create*(databasePath: string) =
     created     REAL,
     started     REAL,
     finished    REAL,
+    notes       TEXT,
     status      TEXT)"""))
   database.close()
+
 
 proc save*(todo: Todo, databasePath: string): int64 =
   let database = open(databasePath, "", "", "")
   let id = database.insertId(
-    sql"""INSERT INTO tasks (text, project, context, priority, created, status)
-          VALUES (?, ?, ?, ?, ?, ?)""",
+    sql"""INSERT INTO tasks (text, project, context, priority, created, notes, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?)""",
     todo.text,
     todo.project,
     todo.context,
     todo.priority,
     todo.timestamp,
+    "notes:",
     "do"
   )
 
   return id
 
-proc deleteTask*(databasePath: string, id: int): string =
+proc showTask*(databasePath: string, id: int): string =
   let database = open(databasePath, "", "", "")
-  discard database.getRow(sql"DELETE FROM tasks WHERE id = ?", id)
-
+  for row in database.rows(sql"SELECT * FROM tasks WHERE id = ?;", id):
+    echo "task:       ", row[0]
+    echo "status:     ", row[9]
+    echo "project:    ", row[2]
+    echo "context:    ", row[3]
+    echo "priority:   ", row[4], "\n"
+    echo  row[1], "\n"
+    echo row[8]
+        
 
 proc showAll*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks;"):
-    echo row[0], " ", row[2], " ", row[3]
-    if row[4] == "4":
-      discard print(row[1], fgRed)
-    if row[4] == "3":
-      discard print(row[1], fgYellow)
-    if row[4] in @["0", "1", "2"]:
-      discard print(row[1], fgGreen)
-    echo "\n"
+    echo row
 
 proc showDo*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'do';"):
-    echo row[0], " ", row[2], " ", row[3]
-    if row[4] == "4":
-      discard print(row[1], fgRed)
-    if row[4] == "3":
-      discard print(row[1], fgYellow)
-    if row[4] in @["0", "1", "2"]:
-      discard print(row[1], fgGreen)
-    echo "\n"
-
-
-
+    echo row
 
 proc showDoing*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'doing';"):
-    echo row[0], " ", row[2], " ", row[3]
-    if row[4] == "4":
-      discard print(row[1], fgRed)
-    if row[4] == "3":
-      discard print(row[1], fgYellow)
-    if row[4] in @["0", "1", "2"]:
-      discard print(row[1], fgGreen)
-    echo "\n"
-
+    echo row
 
 proc showDone*(databasePath: string): string =
   let database = open(databasePath, "", "", "")
   for row in database.rows(sql"SELECT * FROM tasks WHERE status = 'done';"):
-    echo row[0], " ", row[2], " ", row[3]
-    discard print(row[1], fgCyan)
-    echo "\n"
+    echo row
+
 
 proc showTaskText*(databasePath: string, id: int): string =
   let database = open(databasePath, "", "", "")
@@ -107,8 +83,17 @@ proc showProjects*(databasePath: string): string =
 
 proc editTaskText*(databasePath: string, id: int, newText: string): string =
   let database = open(databasePath, "", "", "")
-  for row in database.rows(sql"UPDATE tasks SET text = ? WHERE id = ?;", newText, id):
-    discard row
+  discard database.getRow(sql"UPDATE tasks SET text = ? WHERE id = ?;", newText, id)
+
+
+proc addNote*(databasePath: string, id: int, text: string) =
+  let database = open(databasePath, "", "", "")
+  discard database.getRow(sql"UPDATE tasks SET notes = notes || ? WHERE id = ?;", text, id)
+
+
+proc deleteTask*(databasePath: string, id: int): string =
+  let database = open(databasePath, "", "", "")
+  discard database.getRow(sql"DELETE FROM tasks WHERE id = ?", id)
 
 
 proc moveTask*(databasePath: string, id: string, destination: string, timestamp: float) =

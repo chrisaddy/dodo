@@ -48,6 +48,11 @@ proc start*(tasks: seq[string]): string =
     discard move(@[task, "doing"])
 
 
+proc finish*(tasks: seq[string]): string =
+  for task in tasks:
+    discard move(@[task, "done"])
+
+
 proc doing*(): string =
   return showDoing(db)
 
@@ -60,36 +65,50 @@ proc done*(): string =
 proc projects*(): string =
   return showProjects(db)
 
-proc show*(status = "open"): string =
-  case status:
-    of "open":
-      return showDo(db)
-    of "doing":
-      return showDoing(db)
-    of "done":
-      return showDone(db)
-    of "all":
-      return showAll(db)
-    else: discard
-  discard
+# proc show*(status = "open"): string =
+#   case status:
+#     of "open":
+#       return showDo(db)
+#     of "doing":
+#       return showDoing(db)
+#     of "done":
+#       return showDone(db)
+#     of "all":
+#       return showAll(db)
+#     else: discard
+#   discard
+
+proc show*(ids: seq[int]): string =
+  for id in ids:
+    discard showTask(db, id)
+
 
 proc delete*(ids: seq[int]): string =
   for id in ids:
     discard deleteTask(db, id=id)
     echo "task ", id, " deleted"
 
+proc annotate*(ids: seq[int]): string =
+  for id in ids:
+    echo "task ", id, " notes:"
+    var text = readLine(stdin)
+    text = "\n*" & text
+    addNote(db, id, text)
+
 when isMainModule:
   import cligen
 
   dispatchMulti(
     [dodo.add, help={"text": "todo text:\n\t@ at the beginning of a word assigns it to a project.\n\t\tExample: 'this is a @work project'\n\t# at the beginning of a word assigns it to a context.\n\t\tExample: 'this task has #home and #weekend contexts'\n\t|, ||, |||, |||| assigns priorities 1, 2, 3, 4, respectively.\n\t\tExample: 'This is a pretty important task |||'"}],
+    [annotate],
     [todo],
     [dodo.delete],
     [doing],
     [done],
     [edit],
+    [finish],
     [dodo.move],
     [projects],
-    [show],
+    [dodo.show],
     [start]
   )
